@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>Word Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif; }
+    #app { position: fixed; inset: 0; }
+    #app canvas { display: block; }
+    #overlay {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(180deg, #dcedf7 0%, #cde8d8 100%);
+      transition: opacity .6s ease; z-index: 10; overflow-y: auto; padding: 24px;
+    }
+    #overlay.hidden { opacity: 0; pointer-events: none; }
+    .panel {
+      background: rgba(255,255,255,.9); border-radius: 28px; padding: 36px 40px;
+      max-width: 520px; width: 100%; text-align: center;
+      box-shadow: 0 10px 40px rgba(80,110,130,.18);
+    }
+    h1 { color: #3f6650; font-size: 2.2rem; margin-bottom: 6px; }
+    .tag { color: #71917f; margin-bottom: 14px; }
+    .stickers { color: #5a7a68; background: #eef7f0; border-radius: 14px; padding: 10px; margin-bottom: 20px; }
+    .buttons { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
+    button.big {
+      font-size: 1.35rem; padding: 18px; border: none; border-radius: 18px; cursor: pointer;
+      background: #5aa878; color: #fff; font-family: inherit;
+      box-shadow: 0 4px 0 #47845e; transition: transform .1s;
+    }
+    button.big:active { transform: translateY(3px); box-shadow: none; }
+    button.big.alt { background: #7fa8d0; box-shadow: 0 4px 0 #6489ac; }
+    details { text-align: left; background: #f4f8f5; border-radius: 16px; padding: 14px 18px; margin-bottom: 16px; }
+    summary { cursor: pointer; font-weight: bold; color: #4a6a58; }
+    details label { display: block; margin: 14px 0 4px; color: #56705f; font-size: .95rem; }
+    details input[type=range] { width: 100%; accent-color: #5aa878; }
+    label.row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+    .cats { margin-top: 14px; color: #56705f; }
+    .cats label { margin: 4px 0; text-transform: capitalize; }
+    button.danger {
+      margin-top: 14px; background: #e8b0a8; border: none; padding: 10px 16px;
+      border-radius: 12px; cursor: pointer; color: #7a4038; font-family: inherit;
+    }
+    .help { font-size: .85rem; color: #8aa494; line-height: 1.5; }
+    .toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px);
+      background: rgba(60, 80, 70, .92); color: #fff; padding: 12px 22px;
+      border-radius: 14px; font-size: .95rem; opacity: 0; transition: all .5s ease;
+      z-index: 20; max-width: 90vw; text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="overlay"></div>
+  <script>
+    // Optional Stage-2 speech recognition: deploy api/transcribe with an
+    // OPENAI_API_KEY and set transcribeUrl to '/api/transcribe'. Leave null
+    // for fully-offline attempt detection (default, recommended to start).
+    window.WORD_GARDEN_CONFIG = { transcribeUrl: null };
+  </script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
