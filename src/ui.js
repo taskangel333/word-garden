@@ -112,13 +112,36 @@ export function setupUI({ renderer, audio, listener, garden, game, world }) {
   // Flat-screen play (testing on a laptop/phone)
   $('btn-flat').onclick = () => beginSession();
 
-  // WebXR entry
+  // WebXR entry. The microphone permission dialog is a flat 2D screen — if we
+  // ask for it while immersed, the Quest ends the VR session and dumps the
+  // player back at the menu. So the mic must be settled BEFORE entering VR:
+  // first tap prepares (mic + audio), second tap enters. When the mic was
+  // already granted on an earlier visit, one tap goes straight in.
   if (navigator.xr) {
     navigator.xr.isSessionSupported('immersive-vr').then((ok) => {
       if (!ok) return;
       const btn = $('btn-vr');
       btn.hidden = false;
+      let prepared = false;
+
+      if (navigator.permissions?.query) {
+        navigator.permissions.query({ name: 'microphone' })
+          .then((st) => { if (st.state === 'granted') prepared = true; })
+          .catch(() => {});
+      }
+
       btn.onclick = async () => {
+        if (!prepared) {
+          btn.disabled = true;
+          btn.textContent = '⏳ Getting ready…';
+          await listener.init(); // mic prompt happens here, on the flat page
+          audio.ensure();
+          await audio.preload(CLIP_NAMES);
+          prepared = true;
+          btn.disabled = false;
+          btn.textContent = '🥽 Tap once more to start!';
+          return; // entering VR needs a fresh tap (user gesture)
+        }
         try {
           const session = await navigator.xr.requestSession('immersive-vr', {
             optionalFeatures: ['local-floor'],
@@ -128,7 +151,7 @@ export function setupUI({ renderer, audio, listener, garden, game, world }) {
           await beginSession();
         } catch (err) {
           console.warn('Could not enter VR:', err);
-          alert('Could not enter VR — try again, or use "Play here".');
+          btn.textContent = '🥽 Enter VR (tap again)';
         }
       };
     });
