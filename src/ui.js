@@ -122,36 +122,46 @@ export function setupUI({ renderer, audio, listener, garden, game, world }) {
       if (!ok) return;
       const btn = $('btn-vr');
       btn.hidden = false;
-      let prepared = false;
+      // Once the mic has been granted, later visits can enter VR in one tap:
+      // getUserMedia with a remembered grant shows no dialog, so nothing
+      // interrupts the immersive session.
+      let micReady = localStorage.getItem('wg-mic-ok') === '1';
 
-      if (navigator.permissions?.query) {
-        navigator.permissions.query({ name: 'microphone' })
-          .then((st) => { if (st.state === 'granted') prepared = true; })
-          .catch(() => {});
-      }
+      const enterVR = async () => {
+        // requestSession must be the first await after the tap (user gesture).
+        const session = await navigator.xr.requestSession('immersive-vr', {
+          optionalFeatures: ['local-floor'],
+        });
+        await renderer.xr.setSession(session);
+        session.addEventListener('end', () => {
+          overlay.classList.remove('hidden');
+          btn.classList.remove('pulse');
+          btn.textContent = '🥽 Enter VR';
+        });
+        await beginSession();
+      };
 
       btn.onclick = async () => {
-        if (!prepared) {
+        try {
+          if (micReady) { await enterVR(); return; }
+          // First visit: settle the mic on the flat page — its permission
+          // dialog is 2D and would end an immersive session.
           btn.disabled = true;
           btn.textContent = '⏳ Getting ready…';
-          await listener.init(); // mic prompt happens here, on the flat page
+          const ok = await listener.init();
+          if (ok) localStorage.setItem('wg-mic-ok', '1');
+          else showToast('Microphone was not allowed — the trigger button will mark words as said.');
           audio.ensure();
           await audio.preload(CLIP_NAMES);
-          prepared = true;
+          micReady = true;
           btn.disabled = false;
-          btn.textContent = '🥽 Tap once more to start!';
-          return; // entering VR needs a fresh tap (user gesture)
-        }
-        try {
-          const session = await navigator.xr.requestSession('immersive-vr', {
-            optionalFeatures: ['local-floor'],
-          });
-          await renderer.xr.setSession(session);
-          session.addEventListener('end', () => overlay.classList.remove('hidden'));
-          await beginSession();
+          btn.textContent = '🥽 Ready! Tap here to start';
+          btn.classList.add('pulse'); // entering VR needs a fresh tap
         } catch (err) {
           console.warn('Could not enter VR:', err);
-          btn.textContent = '🥽 Enter VR (tap again)';
+          btn.disabled = false;
+          btn.textContent = '🥽 Enter VR — try again';
+          showToast(`VR could not start: ${err.name || 'Error'} — ${err.message || err}`);
         }
       };
     });

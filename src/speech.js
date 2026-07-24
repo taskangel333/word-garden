@@ -18,6 +18,9 @@ export class SpeechListener {
 
   async init() {
     if (this.stream) return true;
+    // If permission was refused once, don't ask again this visit — a repeat
+    // permission dialog inside VR would end the immersive session.
+    if (this.failed) return false;
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -32,6 +35,7 @@ export class SpeechListener {
       return true;
     } catch (err) {
       console.warn('Microphone unavailable:', err);
+      this.failed = true;
       return false;
     }
   }
